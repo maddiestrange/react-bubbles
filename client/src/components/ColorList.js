@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { axiosWithAuth } from '../utils/axiosWithAuth';
 
 const initialColor = {
   color: "",
@@ -8,23 +8,55 @@ const initialColor = {
 
 const ColorList = ({ colors, updateColors }) => {
   console.log(colors);
-  const [editing, setEditing] = useState(false);
-  const [colorToEdit, setColorToEdit] = useState(initialColor);
+  const id = (colors.length + 1)
+  const [editing, setEditing] = useState(false)
+  const [colorToEdit, setColorToEdit] = useState(initialColor)
+  const [newColor, setNewColor] = useState(initialColor)
+ 
 
   const editColor = color => {
-    setEditing(true);
-    setColorToEdit(color);
+    setEditing(true)
+    setColorToEdit(color)
   };
 
-  const saveEdit = e => {
-    e.preventDefault();
-    // Make a put request to save your updated color
-    // think about where will you get the id from...
-    // where is is saved right now?
+  const saveEdit = color => {
+    if (editing === true) {
+      axiosWithAuth()
+        .put(`/colors/${colorToEdit.id}`, colorToEdit)
+        .then(res => {
+          updateColors(res.data)
+        })
+        .catch(err => {
+          console.log("Error: ", err)
+        });
+    }
   };
 
   const deleteColor = color => {
-    // make a delete request to delete this color
+    setEditing(false)
+    axiosWithAuth()
+      .delete("/colors/" + color.id)
+      .then(res => {
+        console.log(res.data)
+      })
+      .catch(err => {
+        console.log("Error: ", err)
+      })
+  }
+
+
+  const handleSubmit = e => {
+    e.preventDefault();
+    axiosWithAuth()
+      .post("/colors", newColor)
+      .then(res => {
+        //console.log(newColor)
+        //console.log(res.data)
+        updateColors(res.data)
+      })
+      .catch(err => {
+        console.log("Error: ", err);
+      });
   };
 
   return (
@@ -77,7 +109,35 @@ const ColorList = ({ colors, updateColors }) => {
         </form>
       )}
       <div className="spacer" />
-      {/* stretch - build another form here to add a color */}
+      
+      <section>
+      <div>
+        <h1>Add a new color!</h1>
+        <form onSubmit={handleSubmit}>
+          <label> Color Name:</label>
+          <input
+            type="text"
+            name="name"
+            placeholder="name"
+            value={newColor.color}
+            onChange={e =>
+              setNewColor({ ...newColor, color: e.target.value, id: id })}/>
+          <label>Hex:</label>
+          <input
+            type="text"
+            name="hex"
+            placeholder="hex"
+            value={newColor.code.hex}
+            onChange={e =>
+              setNewColor({
+                ...newColor,
+                code: { hex: e.target.value },
+                id: id
+              })}/>
+          <button type="submit">Add Color</button>
+        </form>
+      </div>
+    </section>
     </div>
   );
 };
